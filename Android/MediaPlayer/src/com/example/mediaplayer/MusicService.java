@@ -28,6 +28,11 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	private boolean shuffle=false;
 	private Random rand;
 	
+	public Notification not;
+	Intent notIntent;
+	PendingIntent pendInt;
+	Notification.Builder builder;
+	
 	private final IBinder musicBind = new MusicBinder();
 
 	@Override
@@ -44,7 +49,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
-		if(player.getCurrentPosition()==0){
+		if(player.getCurrentPosition()>=0){
 			mp.reset();
 			playNext();
 		}
@@ -59,12 +64,19 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	@Override
 	public void onPrepared(MediaPlayer mp) {
 		mp.start();
-		Intent notIntent = new Intent(this, MainActivity.class);
+		notIntent = new Intent(this, MainActivity.class);
 		notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		PendingIntent pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-		Notification.Builder builder = new Notification.Builder(this);
+		pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		builder = new Notification.Builder(this);
 		builder.setContentIntent(pendInt).setSmallIcon(R.drawable.play).setTicker(songTitle).setOngoing(true).setContentTitle("Playing").setContentText(songTitle);
-		Notification not = builder.build();
+		not = builder.build();
+		startForeground(NOTIFY_ID, not);
+	}
+	
+	public void updateNotifiction() {
+		builder.setContentIntent(pendInt).setSmallIcon(R.drawable.play).setTicker(songTitle).setOngoing(true).setContentTitle("Playing").setContentText(songTitle);
+		builder.setContentText(songTitle);
+		not = builder.build();
 		startForeground(NOTIFY_ID, not);
 	}
 	
@@ -117,6 +129,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		player.reset();
 		Song playSong = songs.get(songPosn);
 		long currSong = playSong.getId();
+		songTitle = playSong.getTitle();
 		Uri trackUri = ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, currSong);
 		try{
 			player.setDataSource(getApplicationContext(), trackUri);

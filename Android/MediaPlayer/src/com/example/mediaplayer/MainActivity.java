@@ -1,6 +1,8 @@
 package com.example.mediaplayer;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
@@ -75,7 +77,7 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 		});
 		SongAdapter songAdt = new SongAdapter(this, songList);
 		songView.setAdapter(songAdt);
-		setController();
+		//setController();
 	}
 	
 	@Override
@@ -95,7 +97,7 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 	
 	@Override
 	protected void onStop() {
-		controller.hide();
+		//controller.hide();
 		super.onStop();
 	}
 	
@@ -141,6 +143,10 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 			stopService(playIntent);
 			musicSrv=null;
 			System.exit(0);
+			break;
+		case R.id.about:
+			Intent i = new Intent(MainActivity.this, about.class);
+			startActivity(i);
 			break;
 		}
 		return super.onOptionsItemSelected(item);
@@ -319,7 +325,6 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		pause();
 		switch (requestCode) {
 			case REQ_CODE_SPEECH_INPUT: {
 				if(resultCode == RESULT_OK && null != data) {
@@ -336,14 +341,25 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 						pause();
 					}
 					else if(voice.toLowerCase(Locale.ENGLISH).contains("start")||voice.toLowerCase(Locale.ENGLISH).contains("play")) {
-						start();
+						playNext();
+						playPrev();
 					}
 					else if(voice.toLowerCase(Locale.ENGLISH).contains("call")) {
 						String[] split = voice.split(" ", 2);
 						Search(split[1]);
 					}
 					else if(voice.toLowerCase(Locale.ENGLISH).contains("lock") && voice.toLowerCase(Locale.ENGLISH).contains("screen")) {
-						speechText="Not yet Done";
+						speechText="Under Development";
+						speakOut(speechText);
+					}
+					else if(voice.toLowerCase(Locale.ENGLISH).contains("shuffle")) {
+						musicSrv.setShuffle();
+					}
+					else if(voice.toLowerCase(Locale.ENGLISH).contains("time") && voice.toLowerCase(Locale.ENGLISH).contains("now")) {
+						Calendar calander = Calendar.getInstance();
+						SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm", Locale.US);
+						String time = simpleDateFormat.format(calander.getTime());
+						speechText=time;
 						speakOut(speechText);
 					}
 					else if(voice.toLowerCase(Locale.ENGLISH).contains("close")) {
@@ -379,8 +395,9 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 					}
 				}while(c.moveToNext());
 			}
-			if(flag)
-				speakOut(searchName+"was not fond");
+			if(flag) {
+				speakOut(searchName+" was not fond");
+			}
 		}
 		if(c != null) {
 			c.close();
@@ -397,23 +414,14 @@ public class MainActivity extends Activity implements MediaPlayerControl, OnKeyL
 		Name = Name.toLowerCase(Locale.ENGLISH);
 		if(txt.equals(Name)) {
 			Found = true;
-			/*AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-			alert.setTitle("Hey This Contact Is in the LIST!!!");
-			alert.setMessage("The contact "+Name+" was found in this phone... oh ya");
-			alert.setPositiveButton("ok", new OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-				}
-			});
-			alert.show();*/
 		}
 		return Found;
 	}
 	
 	private void speakOut(String speechText) {
-        //tts.speak(speechText, TextToSpeech.QUEUE_FLUSH, null);
+		pause();
         tts.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, null);
+        start();
     }
 
 	@Override
